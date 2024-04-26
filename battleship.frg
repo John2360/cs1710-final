@@ -1,10 +1,25 @@
 #lang forge/bsl
-option run_sterling "vis.js"
 
 option run_sterling "vis.js"
 
 abstract sig Boolean {}
 one sig True, False extends Boolean {}
+
+abstract sig Orientation {}
+one sig Horizontal, Vertical extends Orientation {}
+
+sig Ship {
+  startRow: one Int,
+  startCol: one Int,
+  orientation: one Orientation,
+  length: one Int
+}
+
+//Contains info on positions of ships and shots
+sig Board {
+  shots: pfunc Int -> Int -> Boolean,
+  ships: pfunc Int -> Int -> Ship
+}
 
 //keeps track of order of boards
 one sig Game {
@@ -18,13 +33,6 @@ sig BoardState {
   player2: one Board
 }
 
-//Contains info on positions of ships and shots
-sig Board {
-    //should all be false initially, true means the other player shot at that postion
-    shots: pfunc Int -> Int -> Boolean,
-    ships: pfunc Int -> Int -> Boolean
-}
-
 //Returns the number of shots on the board
 fun countShots[board: Board] : Int {
   #{row, col: Int | board.shots[row][col] = True}
@@ -32,13 +40,26 @@ fun countShots[board: Board] : Int {
 
 //Returns number of ships placed on board
 fun countShips[board: Board] : Int {
-  #{row, col: Int | board.ships[row][col] = True}
+  #{row, col: Int | some board.ships[row][col]}
 }
 
 //Ensures the number of ships on the board is equal to 5
 pred ship_wellformed[board: Board] {
+  all row, col: Int | {
+    all ship: board.ships[row][col] | {
+      ship.startRow >= 0 and ship.startRow <= MAX and
+      ship.startCol >= 0 and ship.startCol <= MAX and
+      (ship.orientation = Horizontal => (add[ship.startCol, ship.length]) <= MAX) and
+      (ship.orientation = Vertical => (add[ship.startRow, ship.length]) <= MAX)
+    }
+  }
   countShips[board] = 5
 }
+
+
+// pred ship_wellformed[board: Board] {
+//   countShips[board] = 5
+// }
 
 // Init state of the game - Rio
 pred init[board: BoardState] {
@@ -55,7 +76,7 @@ pred init[board: BoardState] {
 
 fun MAX: one Int { 7 }
 
-// Two 10 x 10 boards, one for each player - John
+
 pred board_wellformed {
   // Player shots have to be 0-9
   // Player ships have to be 0-9
@@ -77,19 +98,17 @@ pred board_wellformed {
 
 //Checks if it is player1's turn
 pred player1Turn[b: BoardState] {
-  //if the number of shots on both boards is equal it is player1's turn
   countShots[b.player1] = countShots[b.player2]
 }
-
-//Checks if it is player1's turn
+//Checks if it is player2's turn
 pred player2Turn[b: BoardState] {
-  //if player1 has 1 more shot on their board than player2, it is player1's turn
   countShots[b.player1] = add[countShots[b.player2], 1]
 }
 
 pred balancedTurns[b: BoardState] {
   player1Turn[b] or player2Turn[b]
 }
+
 
 pred move[pre, post: BoardState, row, col: Int] {
   // Check if the position has already been shot at
@@ -129,7 +148,6 @@ pred move[pre, post: BoardState, row, col: Int] {
     }
   }
 }
-
 pred trace {
   // Init
   init[Game.first]
@@ -149,28 +167,3 @@ pred trace {
 }
 
 run {trace} for 5 BoardState for {next is linear}
-
-// // Winning
-// pred winning[b: BoardState] {
-//   // Check if a player has all their ships sunk
-//   // Wining previousely implies the game state
-//   allBoatsSunk[b.player1] or
-//   allBoatsSunk[b.player2]
-
-// }
-
-// // When all positions on boat are hit, the ship is sunk
-// //Assumes that because we check ship_sunk_wellformed, a ship's isSunk will only be True if it is actually sunk
-// pred ship_sunk[board: Board, row, col: Int]{
-//   board.ships[row][col] = True and board.shots[row][col] = True
-// }
-
-// // When all boats for a player are sunk, they lose and the game ends
-// pred allBoatsSunk[board: Board] {
-//   // Check all the ships are sunk for the player
-//   all row, col: Int | {
-//     board.shots[row][col] = True => ship_sunk[board, row, col]
-//   }
-// }
-
-

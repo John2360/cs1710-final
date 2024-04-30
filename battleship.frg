@@ -1,4 +1,8 @@
 #lang forge/bsl
+// option solver MiniSatProver
+// option core_minimization rce
+// option logtranslation 1
+// option coregranularity 1
 
 option run_sterling "vis.js"
 
@@ -8,7 +12,10 @@ one sig True, False extends Boolean {}
 abstract sig Orientation {}
 one sig Horizontal, Vertical extends Orientation {}
 
+//expensive to keep info in two places -- startrow, startcol and board.ships
 sig Ship {
+  //replace with set of coordinates
+  //note: values can be negative 
   startRow: one Int,
   startCol: one Int,
   orientation: one Orientation,

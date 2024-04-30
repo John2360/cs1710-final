@@ -3,22 +3,26 @@
 // option core_minimization rce
 // option logtranslation 1
 // option coregranularity 1
-
 option run_sterling "vis.js"
 
 abstract sig Boolean {}
 one sig True, False extends Boolean {}
+
+abstract sig Orientation {}
+one sig Horizontal, Vertical extends Orientation {}
+
+fun MAX: one Int { 7 }
 
 sig Coordinate {
   row: one Int,
   col: one Int
 }
 
-//expensive to keep info in two places -- startrow, startcol and board.ships
 sig Ship {
   //replace with set of coordinates
   //note: values can be negative 
-  locations: set Coordinate
+  locations: set Coordinate,
+  orientation: one Orientation
 }
 
 //Contains info on positions of ships and shots
@@ -44,63 +48,41 @@ fun countShots[board: Board] : Int {
   #{row, col: Int | board.shots[row][col] = True}
 }
 
-//Returns number of ships placed on board
+//Returns the number of ships on the board
 fun countShips[board: Board] : Int {
   #{ship: Ship | ship in board.ships}
 }
 
+//Returns the number of locations in a ship
 fun countShipLocations[ship: Ship] : Int {
   #{loc: Coordinate | loc in ship.locations}
 }
 
-// If ship is hit in all positions it is sunk
-pred ship_sunk[board: Board, ship: Ship] {
-  // All positions of the ship are hit
-  all loc: ship.locations | {
-    board.shots[loc.row][loc.col] = True
-  }
-}
-
-//Ensures the number of ships on the board is equal to 5
 pred ship_wellformed[board: Board] {
-  // Only can put 4 ships on the board???
-  countShips[board] = 4
-  
-  // Why doesent this work??
-  // some ship: Ship | countShipLocations[ship] = 5
-  // some ship: Ship | countShipLocations[ship] = 4
-  // some ship: Ship | countShipLocations[ship] = 3
-  // some ship: Ship | countShipLocations[ship] = 2
+  // All ship locations must be horizontal or vertical
 
-
-  // No ships overlap
-  all s1, s2: board.ships | {
-    s1 != s2 implies no s1.locations & s2.locations
-  }
-
-  // Ships are in bounds
-  all ship: board.ships | {
-    all loc: ship.locations | {
-      loc.row >= 0 and loc.row <= MAX
-      loc.col >= 0 and loc.col <= MAX
+  all s: board.ships | {
+    s.orientation = Horizontal or s.orientation = Vertical
+    s.orientation = Horizontal => {
+      all loc1, loc2: s.locations | {
+        loc1.row = loc2.row
+        loc1.col != loc2.col
+      }
     }
-  }
-
-  // Ships are contiguous
-  all ship: board.ships | {
-    all loc1, loc2: ship.locations | {
-      (loc1.row = loc2.row and abs[loc1.col - loc2.col] = 1) or
-      (loc1.col = loc2.col and abs[loc1.row - loc2.row] = 1)
+    s.orientation = Vertical => {
+      all loc1, loc2: s.locations | {
+        loc1.row != loc2.row
+        loc1.col = loc2.col
+      }
     }
-  }
 
-  // Ships are not diagonal
-  all ship: board.ships | {
-    all loc1, loc2: ship.locations | {
-      loc1.row = loc2.row or loc1.col = loc2.col
+    all loc1: s.locations | {
+      some loc2: s.locations | {
+        abs[loc1.row - loc2.row] <= 1 or abs[loc1.col - loc2.col] <= 1
+      }
     }
+    
   }
-
 }
 
 // Init state of the game - Rio
@@ -111,26 +93,38 @@ pred init[board: BoardState] {
     board.player1.shots[row][col] = False
     board.player2.shots[row][col] = False
   }
-
-  // Board needs to have 5 ships
-  ship_wellformed[board.player1]
-  ship_wellformed[board.player2]
 }
-
-fun MAX: one Int { 7 }
-
 
 pred board_wellformed {
   // Board has to be 8x8
   // Player ships have to be 0-9
   all b: Board, r, c: Int | {
     some b.shots[r][c] => r >= 0 and r <= MAX and c >= 0 and c <= MAX
-    all ship: b.ships | {
-      all loc: ship.locations | {
-        loc.row >= 0 and loc.row <= MAX
-        loc.col >= 0 and loc.col <= MAX
+    
+    all c: Coordinate | {
+      c.row >= 0 and c.row <= MAX
+      c.col >= 0 and c.col <= MAX
+    }
+
+    all s: b.ships | {
+      #{loc: Coordinate | loc in s.locations} >= 1
+      #{loc: Coordinate | loc in s.locations} <= 5
+
+      
+    }
+
+    #{s: b.ships | s in b.ships} = 5
+    all disj s1, s2: b.ships | {
+      all loc1: s1.locations, loc2: s2.locations | {
+        loc1.row != loc2.row or loc1.col != loc2.col
       }
     }
+
+    one s: b.ships | countShipLocations[s] = 1
+    one s: b.ships | countShipLocations[s] = 2
+    one s: b.ships | countShipLocations[s] = 3
+    one s: b.ships | countShipLocations[s] = 4
+    one s: b.ships | countShipLocations[s] = 5
   }
 }
 
@@ -191,7 +185,7 @@ pred trace {
   init[Game.first]
   // Board wellformed
   board_wellformed
-  // Ship wellformed
+  // // Ship wellformed
 
   // Move
   all b: BoardState | { 
@@ -204,4 +198,12 @@ pred trace {
   // Check for win and keep same if won
 }
 
-run {trace} for 5 BoardState for {next is linear}
+// // If ship is hit in all positions it is sunk
+// pred ship_sunk[board: Board, ship: Ship] {
+//   // All positions of the ship are hit
+//   all loc: ship.locations | {
+//     board.shots[loc.row][loc.col] = True
+//   }
+// }
+
+run {trace} for 15 Coordinate, 10 Ship, 5 BoardState for {next is linear}

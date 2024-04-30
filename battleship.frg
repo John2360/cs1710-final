@@ -107,9 +107,9 @@ pred ship_wellformed[board: Board] {
 pred init[board: BoardState] {
 
   // Board needs to all be false
-  all row, col: Int | {
-    (row >= 0 and row <= MAX and col >= 0 and col <= MAX) implies board.player1.shots[row][col] = False
-    (row >= 0 and row <= MAX and col >= 0 and col <= MAX) implies board.player2.shots[row][col] = False
+  all row, col: Int | row >= 0 and row <= MAX and col >= 0 and col <= MAX => {
+    board.player1.shots[row][col] = False
+    board.player2.shots[row][col] = False
   }
 
   // Board needs to have 5 ships
@@ -121,11 +121,16 @@ fun MAX: one Int { 7 }
 
 
 pred board_wellformed {
-  // Player shots have to be 0-9
+  // Board has to be 8x8
   // Player ships have to be 0-9
-  all row, col: Int, board: Board | {
-    board.shots[row][col] = True implies row >= 0 and row <= MAX and col >= 0 and col <= MAX
-    board.shots[row][col] != True implies board.shots[row][col] = False
+  all b: Board, r, c: Int | {
+    some b.shots[r][c] => r >= 0 and r <= MAX and c >= 0 and c <= MAX
+    all ship: b.ships | {
+      all loc: ship.locations | {
+        loc.row >= 0 and loc.row <= MAX
+        loc.col >= 0 and loc.col <= MAX
+      }
+    }
   }
 }
 

@@ -1,10 +1,16 @@
-#lang forge/bsl
+#lang forge
 option run_sterling "vis.js"
 
 option run_sterling "vis.js"
 
 abstract sig Boolean {}
 one sig True, False extends Boolean {}
+abstract sig Orientation {}
+one sig Horizontal, Vertical extends Orientation {}
+abstract sig Coordinate {
+  row: one Int,
+  col: one Int
+}
 
 //keeps track of order of boards
 one sig Game {
@@ -18,11 +24,18 @@ sig BoardState {
   player2: one Board
 }
 
+sig Ship {
+  isSunk: one Boolean,
+  size: one Int,
+  orientation: one Orientation,
+  positions: set Coordinate
+}
+
 //Contains info on positions of ships and shots
 sig Board {
     //should all be false initially, true means the other player shot at that postion
     shots: pfunc Int -> Int -> Boolean,
-    ships: pfunc Int -> Int -> Boolean
+    ships: set Ship
 }
 
 //Returns the number of shots on the board
@@ -32,12 +45,25 @@ fun countShots[board: Board] : Int {
 
 //Returns number of ships placed on board
 fun countShips[board: Board] : Int {
-  #{row, col: Int | board.ships[row][col] = True}
+  #{row, col: Int | board.ships[row][col] = Ship}
 }
 
 //Ensures the number of ships on the board is equal to 5
 pred ship_wellformed[board: Board] {
   countShips[board] = 5
+
+  //All ships are wellformed
+  all s: Ship | {
+    s.size = 2 or s.size = 3
+    s.orientation = Horizontal or s.orientation = Vertical
+    all c: Coordinate | {
+      c in s.positions => {
+        c.row >= 0 and c.row <= MAX
+        c.col >= 0 and c.col <= MAX
+      }
+    }
+  }
+
 }
 
 // Init state of the game - Rio

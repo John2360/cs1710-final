@@ -107,6 +107,7 @@ pred board_wellformed {
 pred player1Turn[b: BoardState] {
   countShots[b.player1] = countShots[b.player2]
 }
+
 //Checks if it is player2's turn
 pred player2Turn[b: BoardState] {
   countShots[b.player1] = add[countShots[b.player2], 1]
@@ -155,6 +156,27 @@ pred move[pre, post: BoardState, row, col: Int] {
     }
   }
 }
+
+/** WIN CONDITIONS ***************************/
+pred ship_sunk[ship: Ship, board: Board] {
+  all pos: Int | {
+    // because we start indexing from 0
+    (pos < ship.length) implies (
+      (ship.orientation = Horizontal and board.shots[ship.startRow][ship.startCol + pos] = True) or
+      (ship.orientation = Vertical and board.shots[ship.startRow + pos][ship.startCol] = True)
+    )
+  }
+}
+
+pred player_wins[player_board: Board, opponent_board: Board] {
+  all ship: opponent_board.ships | ship_sunk[ship, player_board]
+}
+
+
+
+
+
+/** GAME STATE ******************************/ 
 pred trace {
   // Init
   init[Game.first]

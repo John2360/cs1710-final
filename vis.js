@@ -17,13 +17,53 @@ d3.selectAll("svg > *").remove();
   else, even comments.
 */
 
+
+const cellWidth = 20
+const cellHeight = 28
+
+
 function printValue(row, col, yoffset, value, xoffset) {
+    const xwidth = 20
+    const yheight = 28
+
+  let fillColor = "transparent"
+  if (value == 'T') {
+    fillColor = "red"
+  } else if (value == 'F') {
+    fillColor = "gray"
+  } else if (value == 'S') {
+    fillColor = "green" 
+    // var battleship = svg.append('image')
+    //   .attr('xlink:href', './assets/battleship.svg')
+    //   .attr('width', 200)
+    //   .attr('height', 200)
+    // value = battleship
+  } else {
+    fillColor = "lightblue"
+  }
+  
+  
+  d3.select(svg)
+    .append("rect")
+    .style("fill", fillColor)
+    .style("stroke", "black")
+    .attr("x", (row) * xwidth + xoffset + 10)
+    .attr("y", (col) * yheight + yoffset)
+    .attr("width", xwidth)
+    .attr("height", yheight);
+
+
   d3.select(svg)
     .append("text")
     .style("fill", "black")
-    .attr("x", (row + 1) * 10 + xoffset)
-    .attr("y", (col + 1) * 14 + yoffset)
+    .style("text-anchor", "middle")
+    .style("alignment-baseline", "after-edge")
+
+    .attr("x", (row + 1) * xwidth + xoffset)
+    .attr("y", (col + 1) * yheight + yoffset)
     .text(value);
+
+  
 }
 
 function printPlayer1Shots(stateAtom, yoffset) {
@@ -38,20 +78,10 @@ function printPlayer1Shots(stateAtom, yoffset) {
       );
     }
   }
-
-  d3.select(svg)
-    .append("rect")
-    .attr("x", 5)
-    .attr("y", yoffset + 1)
-    .attr("width", 90)
-    .attr("height", 120)
-    .attr("stroke-width", 2)
-    .attr("stroke", "black")
-    .attr("fill", "transparent");
 }
 
 function printPlayer2Shots(stateAtom, yoffset) {
-  xoffset = 200;
+  xoffset = cellWidth * 18;
   for (r = 0; r <= 7; r++) {
     for (c = 0; c <= 7; c++) {
       printValue(
@@ -63,83 +93,68 @@ function printPlayer2Shots(stateAtom, yoffset) {
       );
     }
   }
-
-  d3.select(svg)
-    .append("rect")
-    .attr("x", xoffset + 5)
-    .attr("y", yoffset + 1)
-    .attr("width", 90)
-    .attr("height", 120)
-    .attr("stroke-width", 2)
-    .attr("stroke", "black")
-    .attr("fill", "transparent");
 }
 
 function printPlayer1Ships(stateAtom, yoffset) {
-  xoffset = 95;
+  xoffset = cellWidth * 9;
+
   for (r = 0; r <= 7; r++) {
     for (c = 0; c <= 7; c++) {
-      if (
-        stateAtom.player1.ships[r][c] != null &&
-        stateAtom.player1.ships[r][c].toString().substring(0, 1) != "F"
-      )
-        printValue(
-          r,
-          c,
-          yoffset,
-          stateAtom.player1.ships[r][c].toString().substring(0, 1),
-          xoffset
-        );
+      printValue(
+        r,
+        c,
+        yoffset,
+        'F',
+        xoffset
+      );
     }
   }
 
-  d3.select(svg)
-    .append("rect")
-    .attr("x", xoffset)
-    .attr("y", yoffset + 1)
-    .attr("width", 90)
-    .attr("height", 120)
-    .attr("stroke-width", 2)
-    .attr("stroke", "black")
-    .attr("fill", "transparent");
+  console.log("Player 1 ships:");
+  console.log(stateAtom.player1.ships.toString());
+  stateAtom.player1.ships.locations._tuples.forEach((ship) => {
+    const cord_name = ship._atoms[0]._id;
+    const cord = Coordinate.atom(cord_name);
+    const row = cord.row.toString();
+    const col = cord.col.toString();
+    printValue(parseInt(row), parseInt(col), yoffset, "S", xoffset);
+  });
 }
 
 function printPlayer2Ships(stateAtom, yoffset) {
-  xoffset = 295;
+  xoffset = cellWidth * 27;
+
   for (r = 0; r <= 7; r++) {
     for (c = 0; c <= 7; c++) {
-      if (
-        stateAtom.player2.ships[r][c] != null &&
-        stateAtom.player2.ships[r][c].toString().substring(0, 1) != "F"
-      )
-        printValue(
-          r,
-          c,
-          yoffset,
-          stateAtom.player2.ships[r][c].toString().substring(0, 1),
-          xoffset
-        );
+      printValue(
+        r,
+        c,
+        yoffset,
+        'F',
+        xoffset
+      );
     }
   }
 
-  d3.select(svg)
-    .append("rect")
-    .attr("x", xoffset)
-    .attr("y", yoffset + 1)
-    .attr("width", 90)
-    .attr("height", 120)
-    .attr("stroke-width", 2)
-    .attr("stroke", "black")
-    .attr("fill", "transparent");
+  console.log("Player 2 ships:");
+  console.log(stateAtom.player2.ships.toString());
+  stateAtom.player2.ships.locations._tuples.forEach((ship) => {
+    const cord_name = ship._atoms[0]._id;
+    const cord = Coordinate.atom(cord_name);
+    const row = cord.row.toString();
+    const col = cord.col.toString();
+    printValue(parseInt(row), parseInt(col), yoffset, "S", xoffset);
+  });
 }
 
 var offset = 0;
 for (b = 0; b <= 10; b++) {
   if (BoardState.atom("BoardState" + b) != null) {
+
     printPlayer1Shots(BoardState.atom("BoardState" + b), offset);
     printPlayer1Ships(BoardState.atom("BoardState" + b), offset);
     printPlayer2Shots(BoardState.atom("BoardState" + b), offset);
     printPlayer2Ships(BoardState.atom("BoardState" + b), offset);
   }
-  offset = offset + 120;
+  offset = offset + (cellHeight*9);
 }

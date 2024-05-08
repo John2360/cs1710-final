@@ -93,6 +93,13 @@ pred init[board: BoardState] {
     board.player1.shots[row][col] = False
     board.player2.shots[row][col] = False
   }
+
+  // Ship positions are different for each player
+  all s1: board.player1.ships, s2: board.player2.ships | {
+    let locs1 = s1.locations, locs2 = s2.locations | {
+      locs1 & locs2 = none
+    }
+  }
 }
 
 pred board_wellformed {
@@ -109,8 +116,6 @@ pred board_wellformed {
     all s: b.ships | {
       #{loc: Coordinate | loc in s.locations} >= 1
       #{loc: Coordinate | loc in s.locations} <= 5
-
-      
     }
 
     #{s: b.ships | s in b.ships} = 5
@@ -126,6 +131,7 @@ pred board_wellformed {
     one s: b.ships | countShipLocations[s] = 4
     one s: b.ships | countShipLocations[s] = 5
   }
+
 }
 
 //Checks if it is player1's turn
@@ -179,13 +185,26 @@ pred move[pre, post: BoardState, row, col: Int] {
       pre.player1.shots[row1][col1] = post.player1.shots[row1][col1]
     }
   }
+
+  // All ships must stay in same position
+  all s: pre.player1.ships | {
+    all loc: s.locations | {
+      loc in post.player1.ships.locations
+    }
+  }
+  all s: pre.player2.ships | {
+    all loc: s.locations | {
+      loc in post.player2.ships.locations
+    }
+  }
 }
+
 pred trace {
   // Init
   init[Game.first]
   // Board wellformed
   board_wellformed
-  // // Ship wellformed
+  // Ship wellformed
 
   // Move
   all b: BoardState | { 
@@ -206,4 +225,4 @@ pred trace {
 //   }
 // }
 
-run {trace} for 15 Coordinate, 10 Ship, 5 BoardState for {next is linear}
+run {trace} for 30 Coordinate, 10 Ship, 3 BoardState for {next is linear}

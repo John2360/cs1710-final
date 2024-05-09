@@ -94,10 +94,10 @@ pred init[board: BoardState] {
     board.player2.shots[row][col] = False
   }
 
-  // Ship positions are different for each player
+  // // Ship positions are different for each player
   all s1: board.player1.ships, s2: board.player2.ships | {
     let locs1 = s1.locations, locs2 = s2.locations | {
-      locs1 & locs2 = none
+      #{locs1 - locs2} = 1
     }
   }
 }
@@ -188,14 +188,11 @@ pred move[pre, post: BoardState, row, col: Int] {
 
   // All ships must stay in same position
   all s: pre.player1.ships | {
-    all loc: s.locations | {
-      loc in post.player1.ships.locations
-    }
+    s.locations & post.player1.ships.locations = s.locations
   }
+
   all s: pre.player2.ships | {
-    all loc: s.locations | {
-      loc in post.player2.ships.locations
-    }
+    s.locations & post.player2.ships.locations = s.locations
   }
 }
 

@@ -30,7 +30,8 @@ function printValue(row, col, yoffset, value, xoffset) {
   if (value == 'T') {
     fillColor = "red"
   } else if (value == 'F') {
-    fillColor = "gray"
+    // fillColor = "gray"
+    fillColor = "lightblue"
   } else if (value == 'S') {
     fillColor = "green" 
     // var battleship = svg.append('image')
@@ -39,7 +40,7 @@ function printValue(row, col, yoffset, value, xoffset) {
     //   .attr('height', 200)
     // value = battleship
   } else {
-    fillColor = "lightblue"
+    fillColor = "green"
   }
   
   
@@ -110,14 +111,18 @@ function printPlayer1Ships(stateAtom, yoffset) {
     }
   }
 
-  console.log("Player 1 ships:");
-  console.log(stateAtom.player1.ships.toString());
-  stateAtom.player1.ships.locations._tuples.forEach((ship) => {
-    const cord_name = ship._atoms[0]._id;
-    const cord = Coordinate.atom(cord_name);
-    const row = cord.row.toString();
-    const col = cord.col.toString();
-    printValue(parseInt(row), parseInt(col), yoffset, "S", xoffset);
+  stateAtom.player1.ships._tuples.forEach((ship) => {
+    const ship_name = ship.toString();
+    const ship_atom = Ship.atom(ship_name);
+    const locations = ship_atom.locations._tuples;
+
+    locations.forEach((cord_id) => {
+      const cord_name = cord_id.toString();
+      const cord = Coordinate.atom(cord_name);
+      const row = cord.row.toString();
+      const col = cord.col.toString();
+      printValue(parseInt(row), parseInt(col), yoffset, ship_name.replace("Ship", ""), xoffset);
+    });
   });
 }
 
@@ -136,14 +141,18 @@ function printPlayer2Ships(stateAtom, yoffset) {
     }
   }
 
-  console.log("Player 2 ships:");
-  console.log(stateAtom.player2.ships.toString());
-  stateAtom.player2.ships.locations._tuples.forEach((ship) => {
-    const cord_name = ship._atoms[0]._id;
-    const cord = Coordinate.atom(cord_name);
-    const row = cord.row.toString();
-    const col = cord.col.toString();
-    printValue(parseInt(row), parseInt(col), yoffset, "S", xoffset);
+  stateAtom.player2.ships._tuples.forEach((ship) => {
+    const ship_name = ship.toString();
+    const ship_atom = Ship.atom(ship_name);
+    const locations = ship_atom.locations._tuples;
+
+    locations.forEach((cord_id) => {
+      const cord_name = cord_id.toString();
+      const cord = Coordinate.atom(cord_name);
+      const row = cord.row.toString();
+      const col = cord.col.toString();
+      printValue(parseInt(row), parseInt(col), yoffset, ship_name.replace("Ship", ""), xoffset);
+    });
   });
 }
 

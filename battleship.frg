@@ -1,8 +1,8 @@
 #lang forge
-// option solver MiniSatProver
-// option core_minimization rce
-// option logtranslation 1
-// option coregranularity 1
+option solver MiniSatProver
+option core_minimization rce
+option logtranslation 1
+option coregranularity 1
 option run_sterling "vis.js"
 
 abstract sig Boolean {}
@@ -62,23 +62,32 @@ pred ship_wellformed[board: Board] {
   // All ship locations must be horizontal or vertical
 
   all s: board.ships | {
+    // Ships are in a line
     s.orientation = Horizontal or s.orientation = Vertical
+    
     s.orientation = Horizontal => {
-      all loc1, loc2: s.locations | {
-        loc1.row = loc2.row
-        loc1.col != loc2.col
+      let col = s.locations.col | {
+        #{col} = 1
       }
-    }
-    s.orientation = Vertical => {
-      all loc1, loc2: s.locations | {
-        loc1.row != loc2.row
-        loc1.col = loc2.col
+
+      all row1: s.locations.row | {
+        some row2: s.locations.row | {
+          row1 != row2
+          row1 = add[row2, 1] or row1 = add[row2, -1]
+        }
       }
     }
 
-    all loc1: s.locations | {
-      some loc2: s.locations | {
-        abs[loc1.row - loc2.row] <= 1 or abs[loc1.col - loc2.col] <= 1
+    s.orientation = Vertical => {
+      let row = s.locations.row | {
+        #{row} = 1
+        }
+
+      all col1: s.locations.col | {
+        some col2: s.locations.col | {
+          col1 != col2
+          col1 = add[col2, 1] or col1 = add[col2, -1]
+        }
       }
     }
     
@@ -94,12 +103,8 @@ pred init[board: BoardState] {
     board.player2.shots[row][col] = False
   }
 
-  // // Ship positions are different for each player
-  all s1: board.player1.ships, s2: board.player2.ships | {
-    let locs1 = s1.locations, locs2 = s2.locations | {
-      #{locs1 - locs2} = 1
-    }
-  }
+  ship_wellformed[board.player1]
+  ship_wellformed[board.player2]
 }
 
 pred board_wellformed {
@@ -130,6 +135,15 @@ pred board_wellformed {
     one s: b.ships | countShipLocations[s] = 3
     one s: b.ships | countShipLocations[s] = 4
     one s: b.ships | countShipLocations[s] = 5
+  }
+
+  // Not all player 1 and player 2 ships are in the same space
+  all b: BoardState | {
+    all s1: b.player1.ships, s2: b.player2.ships | {
+      let locs1 = s1.locations, locs2 = s2.locations | {
+        #{locs1 - locs2} >= 1
+      }
+    }
   }
 
 }
@@ -222,4 +236,4 @@ pred trace {
 //   }
 // }
 
-run {trace} for 30 Coordinate, 10 Ship, 3 BoardState for {next is linear}
+run {trace} for 30 Coordinate, 10 Ship, 1 BoardState for {next is linear}

@@ -39,8 +39,12 @@ function printValue(row, col, yoffset, value, xoffset) {
     //   .attr('width', 200)
     //   .attr('height', 200)
     // value = battleship
+  }  else if (value == ' ') {
+    fillColor = "gray" 
+
+  
   } else {
-    fillColor = "green"
+    fillColor = "lightblue"
   }
   
   
@@ -105,7 +109,7 @@ function printPlayer1Ships(stateAtom, yoffset) {
         r,
         c,
         yoffset,
-        'F',
+        ' ',
         xoffset
       );
     }
@@ -135,7 +139,7 @@ function printPlayer2Ships(stateAtom, yoffset) {
         r,
         c,
         yoffset,
-        'F',
+        ' ',
         xoffset
       );
     }

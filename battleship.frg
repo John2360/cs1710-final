@@ -63,33 +63,34 @@ pred ship_wellformed[board: Board] {
 
   all s: board.ships | {
     // Ships are in a line
-    s.orientation = Horizontal or s.orientation = Vertical
+    s.orientation = Vertical or s.orientation = Horizontal
     
-    s.orientation = Horizontal => {
-      let col = s.locations.col | {
-        #{col} = 1
-      }
+    // TODO: Fix this stuff
+    // s.orientation = Horizontal => {
+    //   let col = s.locations.col | {
+    //     #{col} = 1
+    //   }
 
-      all row1: s.locations.row | {
-        some row2: s.locations.row | {
-          row1 != row2
-          row1 = add[row2, 1] or row1 = add[row2, -1]
-        }
-      }
-    }
+      // all row1: s.locations.row | {
+      //   some row2: s.locations.row | {
+      //     row1 != row2
+      //     row1 = add[row2, 1] or row1 = add[row2, -1]
+      //   }
+      // }
+    // }
 
-    s.orientation = Vertical => {
-      let row = s.locations.row | {
-        #{row} = 1
-        }
+    // s.orientation = Vertical => {
+    //   let col = s.locations.col | {
+    //     #{col} = 1
+    //     }
 
-      all col1: s.locations.col | {
-        some col2: s.locations.col | {
-          col1 != col2
-          col1 = add[col2, 1] or col1 = add[col2, -1]
-        }
-      }
-    }
+    //   // all col1: s.locations.col | {
+    //   //   some col2: s.locations.col | {
+    //   //     col1 != col2
+    //   //     col1 = add[col2, 1] or col1 = add[col2, -1]
+    //   //   }
+    //   // }
+    // }
     
   }
 }
@@ -103,8 +104,8 @@ pred init[board: BoardState] {
     board.player2.shots[row][col] = False
   }
 
-  ship_wellformed[board.player1]
-  ship_wellformed[board.player2]
+  // ship_wellformed[board.player1]
+  // ship_wellformed[board.player2]
 }
 
 pred board_wellformed {

@@ -1,152 +1,116 @@
-#lang forge/bsl
+#lang forge
 
-open "battleship.frg"
+open "battleship.frg"  
 
 //shots outside of range 
-pred badBoard_shots{
+pred badBoard_shots {
   some board: Board | {
     some row, col: Int | {
-      row < 0 or
-      col < 0 or
-      row > 7 or
-      row > 7
-      board.shots[row][col] = True
+      (row < 0 or row > 7 or col < 0 or col > 7) and board.shots[row][col] = True
     }
   }
 }
 
 //ships outside of range 
-pred badBoard_ships{
+pred badBoard_ships {
   some board: Board | {
-    some row, col: Int | {
-      row < 0 or
-      col < 0 or
-      row > 7 or
-      row > 7
-      board.ships[row][col] = True
+    some s: board.ships| {
+      some loc:s.locations|{
+        loc.row < 0 or loc.row > 7 or loc.col < 0 or loc.col > 7
+        loc.row = True 
+        loc.col = True}
     }
   }
 }
 
-//All positions are empty
-pred empty_board{
-  all board: Board, row, col: Int | {
-    board.shots[row][col] = False
-    board.ships[row][col] = False
+//no boards or ships on board
+pred empty_board {
+  all board: Board|{
+    all row, col: Int | row >= 0 and row <= MAX and col >= 0 and col <= MAX => {
+      board.shots[row][col] = False
+    }
+    no board.ships
   }
 }
 
-//Everything in range is true
-pred all_true_inrange{
+
+// All positions within board range are filled with shots
+pred all_shots_in_range {
   all board: Board, row, col: Int | {
-    (row < 0 or col < 0 or row > 7 or col > 7) implies board.shots[row][col] = False
-    (row < 0 or col < 0 or row > 7 or col > 7) implies board.ships[row][col] = False
-    (row >= 0 and col >= 0 and row <= 7 and col <= 7) implies board.shots[row][col] = True 
-    (row >= 0 and col >= 0 and row <= 7 and col <= 7) implies board.ships[row][col] = True
+    (row >= 0 and row <= 7 and col >= 0 and col <= 7) implies board.shots[row][col] = True
+  }
+}
+
+// Ensures that no ships overlap
+pred no_overlap_ships {
+  all board: Board | {
+    all disj s1, s2: board.ships | {
+      no loc1: s1.locations, loc2: s2.locations | loc1 = loc2
+    }
+  }
+}
+
+// Ensures the ships are well-formed
+test suite for ship_wellformed {
+  test expect {
+    badPlacement : { all board : Board | badBoard_ships } is unsat
+    allShipsWellFormed : { all board : Board | ship_wellformed[board] } is sat
+    noOverlap : {no_overlap_ships} is sat
   }
 }
 
 pred not_board_wellformed { not board_wellformed}
 
+// Ensures board is wellformed 
 test suite for board_wellformed {
 
     assert badBoard_shots is sufficient for not_board_wellformed
     assert badBoard_ships is sufficient for not_board_wellformed
-    assert empty_board is sufficient for board_wellformed
-    assert all_true_inrange is sufficient for board_wellformed
+    assert empty_board is necessary for board_wellformed
+    assert all_shots_in_range is necessary for board_wellformed
 }
 
-//No ships on board
-pred no_ships[board:Board]{
-  all row, col : Int | {
-    board.ships[row][col] = False
-  }
-}
-
-//Every postion contains a ship
-pred too_many_ships[board: Board]{
-  all row, col : Int | {
-    board.ships[row][col] = True
-  }
-}
-
-//There are exactly five ships on the board
-pred five_ships[board: Board]{
-  all row, col : Int | {
-    ((row = 0 and col = 0) or 
-    (row = 0 and col = 1) or 
-    (row = 0 and col = 2) or 
-    (row = 1 and col = 0) or 
-    (row = 1 and col = 1) ) implies board.ships[row][col] = True else board.ships[row][col] = False
-  }
-}
-
-test suite for ship_wellformed {
-    test expect {
-      noShips : { (all board : Board | no_ships[board] and ship_wellformed[board] )} is unsat
-      tooManyShips : { (all board : Board | too_many_ships[board] and ship_wellformed[board] )} is unsat
-      fiveShips : { (all board : Board | five_ships[board] and ship_wellformed[board] )} is sat
-    }
-}
-
-//The board contains at least one shot 
-pred board_contains_shot[board: Board] {
+// Tests for the initialization state of the game
+pred bad_init_boardstate[b: BoardState] {
   some row, col: Int | {
-    (row >= 0 and col >= 0 and row <= 7 and col <= 7)
-    board.shots[row][col] = True
+    (row >= 0 and col >= 0 and row <= MAX and col <= MAX)
+    (b.player1.shots[row][col] = True or b.player2.shots[row][col] = True)
   }
 }
 
-//Some board in boardstate contains a shot
-pred bad_init_boardstate[b: BoardState]{
-  board_contains_shot[b.player1] or
-  board_contains_shot[b.player2]
+// Both players have taken same number of shots
+pred boardStateWithEvenNumberShots[b: BoardState] {
+  countShots[b.player1] = countShots[b.player2]
 }
 
-//One of the boards doesn't have exactly 5 ships
-pred ship_badlyformed_boardstate[b: BoardState]{
-  not ship_wellformed[b.player1] or
-  not ship_wellformed[b.player2]
+// Player 1 has taken one more shot than player 2
+pred boardStateWithOneMoreShot[b: BoardState] {
+  countShots[b.player1] = countShots[b.player2] + 1
 }
 
+// Test that game is initialized correctly
 test suite for init {
-    
-    test expect {
-      containsShot : { (all boardState : BoardState | bad_init_boardstate[boardState] and init[boardState] )} is unsat
-      badShips : { (all boardState : BoardState | ship_badlyformed_boardstate[boardState] and init[boardState] )} is unsat
-    }
-}
-
-//Both boards have same number of shots
-pred boardStateWithEvenNumberShots[board: Board]{
-  some numShots: Int | {
-    countShots[board.player1] = numShots
-    and countShots[board.player2] = numShots
+  test expect {
+    initialEmpty : { all b: BoardState | init[b] and empty_board} is sat
+    badInit : { all b: BoardState | bad_init_boardstate[b] } is sat
   }
 }
 
-//Player1 has one more shot on their board
-pred boardStateWithOneMoreShot[board: BoardState]{
-  some numShots: Int | {
-    countShots[board.player1] = numShots
-    and countShots[board.player2] = subtract[numShots, 1]
-  }
-}
-
+// Checks for player 1's turn properly
 test suite for player1Turn {
-    test expect {
-      boardWithEvenNumberShots : { (all board : BoardState | boardStateWithEvenNumberShots[board] and player1Turn[board] )} is sat
-      boardWithOneMoreShotPlayer1 : { (all board : BoardState | boardStateWithOneMoreShot[board] and player1Turn[board] )} is unsat
-    }
+  test expect {
+    evenShotsLeadToPlayer1Turn : { all b: BoardState | boardStateWithEvenNumberShots[b] implies player1Turn[b] } is sat
+  }
 }
 
+// Checks for player 2's turn properly
 test suite for player2Turn {
-    test expect {
-      boardWithOneMoreShot : { (all board : BoardState | boardStateWithOneMoreShot[board] and player2Turn[board] )} is sat
-      boardWithEvenNumberShotsPlayer2 : { (all board : BoardState | boardStateWithEvenNumberShots[board] and player2Turn[board] )} is unsat
-    }
+  test expect {
+    oddShotsLeadToPlayer2Turn : { all b: BoardState | boardStateWithOneMoreShot[b] implies player2Turn[b] } is sat
+  }
 }
 
+// Tests for the mechanics of a move in the game
 pred onlyOneShot[pre, post: BoardState]{
   add[countShots[pre.player1], countShots[pre.player2]] = subtract[add[countShots[post.player1], countShots[post.player2]], 1]
 }

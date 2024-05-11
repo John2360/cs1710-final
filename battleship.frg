@@ -59,56 +59,80 @@ fun countShipLocations[ship: Ship] : Int {
 }
 
 pred ship_wellformed[board: Board] {
-  // All ship locations must be horizontal or vertical
-
   all s: board.ships | {
-    // Ships are in a line
-    s.orientation = Vertical or s.orientation = Horizontal
+    s.orientation = Horizontal or s.orientation = Vertical
     
-    // TODO: Fix this stuff
-
-    // horizontal rows
     s.orientation = Horizontal => {
-      all c1: s.locations | some c2: s.locations - c1 | {
-        c1.row = c2.row and (abs[subtract[c1.col, c2.col]] = 1)
+      all loc1: s.locations | {
+        all loc2: s.locations - loc1 | {
+          loc1.row = loc2.row and 
+          (loc1.col + 1 = loc2.col or loc1.col - 1 = loc2.col)
+        }
       }
     }
 
-    // vertical rows
     s.orientation = Vertical => {
-      all c1: s.locations | some c2: s.locations - c1 | {
-        c1.col = c2.col and (abs[subtract[c1.row, c2.row]] = 1)
+      all loc1: s.locations | {
+        all loc2: s.locations - loc1 | {
+          loc1.col = loc2.col and 
+          (loc1.row + 1 = loc2.row or loc1.row - 1 = loc2.row)
+        }
       }
     }
-    // s.orientation = Horizontal => {
-    //   let col = s.locations.col | {
-    //     #{col} = 1
-    //   }
-
-      // all row1: s.locations.row | {
-      //   some row2: s.locations.row | {
-      //     row1 != row2
-      //     row1 = add[row2, 1] or row1 = add[row2, -1]
-      //   }
-      // }
-    // }
-
-    // s.orientation = Vertical => {
-    //   let col = s.locations.col | {
-    //     #{col} = 1
-    //     }
-
-    //   // all col1: s.locations.col | {
-    //   //   some col2: s.locations.col | {
-    //   //     col1 != col2
-    //   //     col1 = add[col2, 1] or col1 = add[col2, -1]
-    //   //   }
-    //   // }
-    // }
-    
-    
   }
 }
+
+// pred ship_wellformed[board: Board] {
+//   // All ship locations must be horizontal or vertical
+
+//   all s: board.ships | {
+//     // Ships are in a line
+//     s.orientation = Vertical or s.orientation = Horizontal
+    
+//     // TODO: Fix this stuff
+
+//     // horizontal rows
+//     s.orientation = Horizontal => {
+//       all c1: s.locations | some c2: s.locations - c1 | {
+//         c1.row = c2.row and (abs[subtract[c1.col, c2.col]] = 1)
+//       }
+//     }
+
+//     // vertical rows
+//     s.orientation = Vertical => {
+//       all c1: s.locations | some c2: s.locations - c1 | {
+//         c1.col = c2.col and (abs[subtract[c1.row, c2.row]] = 1)
+//       }
+//     }
+//     // s.orientation = Horizontal => {
+//     //   let col = s.locations.col | {
+//     //     #{col} = 1
+//     //   }
+
+//       // all row1: s.locations.row | {
+//       //   some row2: s.locations.row | {
+//       //     row1 != row2
+//       //     row1 = add[row2, 1] or row1 = add[row2, -1]
+//       //   }
+//       // }
+//     // }
+
+//     // s.orientation = Vertical => {
+//     //   let col = s.locations.col | {
+//     //     #{col} = 1
+//     //     }
+
+//     //   // all col1: s.locations.col | {
+//     //   //   some col2: s.locations.col | {
+//     //   //     col1 != col2
+//     //   //     col1 = add[col2, 1] or col1 = add[col2, -1]
+//     //   //   }
+//     //   // }
+//     // }
+    
+    
+//   }
+// }
 
 // Init state of the game - Rio
 pred init[board: BoardState] {

@@ -33,7 +33,6 @@ pred empty_board {
   }
 }
 
-
 // All positions within board range are filled with shots
 pred all_shots_in_range {
   all board: Board, row, col: Int | {
@@ -50,6 +49,7 @@ pred no_overlap_ships {
   }
 }
 
+
 // Ensures the ships are well-formed
 test suite for ship_wellformed {
   test expect {
@@ -59,15 +59,19 @@ test suite for ship_wellformed {
   }
 }
 
+
+
 pred not_board_wellformed { not board_wellformed}
 
 // Ensures board is wellformed 
 test suite for board_wellformed {
-
-    assert badBoard_shots is sufficient for not_board_wellformed
-    assert badBoard_ships is sufficient for not_board_wellformed
     assert empty_board is necessary for board_wellformed
     assert all_shots_in_range is necessary for board_wellformed
+}
+
+test suite for not_board_wellformed {
+    assert badBoard_shots is sufficient for not_board_wellformed
+    assert badBoard_ships is sufficient for not_board_wellformed
 }
 
 // Tests for the initialization state of the game

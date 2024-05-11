@@ -66,6 +66,20 @@ pred ship_wellformed[board: Board] {
     s.orientation = Vertical or s.orientation = Horizontal
     
     // TODO: Fix this stuff
+
+    // horizontal rows
+    s.orientation = Horizontal => {
+      all c1: s.locations | some c2: s.locations - c1 | {
+        c1.row = c2.row and (abs[subtract[c1.col, c2.col]] = 1)
+      }
+    }
+
+    // vertical rows
+    s.orientation = Vertical => {
+      all c1: s.locations | some c2: s.locations - c1 | {
+        c1.col = c2.col and (abs[subtract[c1.row, c2.row]] = 1)
+      }
+    }
     // s.orientation = Horizontal => {
     //   let col = s.locations.col | {
     //     #{col} = 1
@@ -92,6 +106,7 @@ pred ship_wellformed[board: Board] {
     //   // }
     // }
     
+    
   }
 }
 
@@ -104,8 +119,8 @@ pred init[board: BoardState] {
     board.player2.shots[row][col] = False
   }
 
-  // ship_wellformed[board.player1]
-  // ship_wellformed[board.player2]
+  ship_wellformed[board.player1]
+  ship_wellformed[board.player2]
 }
 
 pred board_wellformed {
@@ -217,6 +232,9 @@ pred trace {
   // Board wellformed
   board_wellformed
   // Ship wellformed
+  ship_wellformed[Game.first.player1]
+  ship_wellformed[Game.first.player2]
+
 
   // Move
   all b: BoardState | { 

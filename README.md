@@ -1,30 +1,57 @@
-# curiositymodeling
+# CS1710 Final Project
 
-Modeling a game of battleship
-Currently the game shows five turns as a large number of turns takes a long amount of time. These can be run either by clicking the green play button in VSCode or by running the file with "racket battleship.frg".
+## Project Objective
+Battleship is a classic naval strategy game where two players attempt to sink each other's fleet of ships by guessing their locations on a hidden grid. Each player places a number of ships—differing in size and orientation—onto a secret board. The game proceeds in turns with players calling out grid coordinates, aiming to hit and ultimately sink their opponent’s ships. The first player to destroy all of their opponent’s vessels wins. 
 
-# Project Objective: What are you trying to model? Include a brief description that would give someone unfamiliar with the topic a basic understanding of your goal.
+With this project, we intend to model the game Battleship. We model a game board, the different types of ships in play (each can take up multiple consecutive cells) and their position on the board, hits and misses, sinking, and a win condition. We incorporate logic to distinguish between hits and misses and to track the state of each ship (intact or sunk). We hope our model helps us better understand the rules of the game, as well as strategies to win, and identify unintended behaviors and edge cases. We also hope to verify the integrity of the system, ensuring that it behaves in expected ways in all possible scenarios. According to the rules of the game, we will examine the outcomes for consistency. 
 
-The goal of this model is to model a possible game of Battleship. The game Battleship involves two players, each with their own board, who each place 5 ships on their boards. Then, the players take turns attempting to predict where each others ships are by calling out positions on the board. If a player guesses correctly, their opponent's ship is hit. If all positions containing ships for a player are hit, then the other player wins.
 
-# Model Design and Visualization: Give an overview of your model design choices, what checks or run statements you wrote, and what we should expect to see from an instance produced by the Sterling visualizer. How should we look at and interpret an instance created by your spec? Did you create a custom visualization, or did you use the default?
+## Overview of Model
 
-There were a few different design choices we made that differ from an actual game of Battleship. Firstly, we made the board sizes to be 8x8 rather than the standard 10x10 boards typically found in Battleship. In regular Battleship, there are ships of size 2, 3, 3, 4, and 5. However, we chose to constrain the sizes of the ships to all be one position.
-We chose to model each board as two separate pfuncs, one containing the postion of the shots and one containing the positions of the ships. This way, we could keep track of all shots, miss or hit, and also ensure that the positions of the ships did not change from turn to turn. We also created the BoardState and Game sigs which keep track of the player's boards and the progression of turns respectively.
-Some of the important predicates we created are board_wellformed, init, and move. The board_wellformed predicate ensures that any shots placed on the board are at expected positions, namely ones within the range of 0-7, inclusive. The init predicate ensures that each player has indeed placed the correct number of ships on the board and that neither player has taken a turn yet. Finally, the move predicate is the one that models moves between turns, ensuring the correct player is moving at any point and that any positions that isn't the chosen position do not change.
-The expected behavior from an instance would be that the first BoardState contains only boards that have not been shot at and correctly formed ships. Each BoardState should also be reachable from the first BoardState via next.
-We created a custom visualizer for this model in the form of a few grids. The grids that are within the same rectangle represent a single players board, with the left grid belonging to player1 and the right grid belonging to player2. Within these grids are two smaller grids, representing the shots and the ships. The emptier grids with only T's represent the postions of the ships whereas the filled gridds represent shots, with T's representing where that board has been shot.
+### Sigs and Predicates
+#### Sigs
+- `Boolean` (self-explanatory, T/F values)
+- `Orientation` to define the orientation of ships, either vertical or horizontal. This affects calculations in the ship_wellformed predicate to ensure that ships don't go off the board.
+- `Ship`, which contains the two fields "location" and "orientation." Locations consist of a set of Coordinates which represent the cells on the board where ships occupy. Using a set lets us represent the location of ships of various lengths. A Ship can only have one Orientation, which is either horizontal or vertical. 
+- `Board`, which shows us information about the positions of ships and the status of shots that have been fired. We use partial functions from integers to either Booleans (for shots) or Ships (for ship placement)
+- `Game`, for tracking the order of board states in a game. This begins with an initial board state, "first", then transitions through game states ("next")
+- `BoardState`: Contains two player boards, representing individual game boards for each player. 
 
-# Signatures and Predicates: At a high level, what do each of your sigs and preds represent in the context of the model? Justify the purpose for their existence and how they fit together.
-Our model starts with an init predicate which is used to enforce the initial state of the game. This predicate ensures that the game has not started yet, and that each player has placed the correct number of ships on their board. The BoardState sig is used to keep track of the state of the game, with the next predicate being used to model the progression of turns. The Board sig is used to keep track of the state of each player's board, with the shots and ships predicates being used to keep track of the positions of the shots and the ships on the board respectively. The Game sig is used to keep track of the progression of turns, with the move predicate being used to model the progression of turns.
+#### Predicates
+- `ship_wellformed` to make sure that ships are placed legally on board. This includes their positioning (that all ships are properly on the board), and the count of the ships should be exactly 5. This is so that the game can start in a valid state, and prevents the illegal placement of ships that could lead to unplayable game states. 
+init to a valid starting state where no shots have been fired; verifies initial ship configurations using ship_wellformed predicate. 
+- `board_wellformed`, which continuously checks the validity of the game configuration (all shots are within defined range), and makes sure that ship positions don't change between different states of the game. 
+- `player1Turn` and `player2Turn` are self explanatory, determining whose turn it is to play
+- `balancedTurns` uses player1Turn and player2Turn to ensure that the game properly alternates between players. 
+move updates the board based on the current player's shot, directly handling that action
+trace outlines the overall flow of the game, simulating from start to finish
+#### Functions
+- `countShots` and `countShip`s are self explanatory
+- `MAX` helps us to check boundaries, defining the maximum value for coordinates on the board. 
 
-Next we use the board_wellformed predicate to ensure that any shots placed on the board are at expected positions, namely ones within the range of 0-7, inclusive. It makes sure that the ships are also within this range and that all shots are either filled as true or false. Finally, we make sure that stay in the same positions for the while game.
+### Representation & Assumptions
+Initially, ships were simply represented as Boolean values, indicating whether they were present on the grid, but this approach wasn't very conducive to enforcing game rules related to ship size/orientation. Properties like startRow, startCol, orientation and length were added to the original Ship sig. 
 
-Finally, we call our move predicate to model the progression of turns. This predicate ensures the correct player is moving at any point and that any positions that isn't the chosen position. We created player turn functions, similar to those in Tic-Tac-Toe, to model the progression of turns. Based on this we update the correct player and ensure the other players board stays the same.
+We ended up modeling a 7x7 board instead of a 10x10 board due to optimization problems. The main limit to our model is that it takes a long time to generate instances due to the large search space. 
 
-# Testing: What tests did you write to test your model itself? What tests did you write to verify properties about your domain area? Feel free to give a high-level overview of this.
-Our goal in testing was to test the main componenets of the game, namely the progression of turns and the state of the boards. We start by testing the wellformedness of our boards. We want to make sure that ships and shots are within the bounds of the board and that the shots are either true or false. We also want to make sure that the ships are in the same position for the entire game. We also want to make sure that the game is wellformed at the start, with the correct number of ships placed on the board and that the game has not started yet. Finally, we want to make sure that the progression of turns is wellformed, with the correct player moving at any point and that any positions that isn't the chosen position do not change.
+## Refinements from Proposal
+- Did your goals change at all from your proposal? Did you realize anything you planned was unrealistic, or that anything you thought was unrealistic was doable?
+  - We had to model a 7x7 board instead of a 10x10 board due to optimization problems. 
+  - We originally intended to model a win condition, but this would require generating at least the number of board states as there are ships on the board, which would take too much time and memory. Therefore, we plan to see whether going first would yield an advantage for that player by observing 5 board states.  
+- We had originally designed the game using a series of different pfuncs. We thought that this implementation carried too many data structures. Thus, we rewrote the game using a ship set. This allowed us to keep track of the respective ships in a set across the whole game. This also allowed us to avoid storing ship location data in more than one location.
+- Once we implemented an initial version of the game we realized that the solver found it easier to duplicate the ship instances from player 1 to player 2.
 
-Next we test our player turns. Our move function is depdent on this functionality. We test that for a variety of different shots we are selecting the correct player. We do acknoldge that if we start in an unbalanced state the game will continue in an unbalanced state.
 
-Finally, we test our move function. We ensure that the correct player is shooting only one shot at a time. We also ensure that the other players board stays the same.
+## Interpreting an Instance
+Each instance starts at the top with a Game. Each game has a GameState. This atom contains Boards. These represent the boards for player 1 and player 2. Within this, the Board contains a set of ships and a pfunc that returns true or false for the grid for whether there has been a shot on that position. The set contains ships. Each ship contains a set of coordinates, each with a row and column associated with it. Thus, as the Game states increase the play also increases.
+
+For the custom visualization, there are a total of 4 columns representing the shots taken and ships placed. The first two columns represent Player 1's boards. The first column to the left is for the shots taken by player 1 throughout the game. Cells where shots have been fired are colored red. The second column to the left is for the ships placed by player 1 on their own board, marked by the "S" symbol. The remaining two columns represent Player 2's boards, where the third column is for the shots taken by player 2 and the fourth visualizes where Player 2 has placed their ships. 
+
+
+## Testing
+- We've implemented tests to evaluate both model correctness and also the domain area of the game. 
+- Model Correctness: To check the base mechanics and constraints of Battleship, there are checks for boundary conditions (badBoard_shots, badBoard_ships). The initial game state is also verified, as empty_board checks that an empty board is a valid state at initialization. Through all_true_inrange, we also check that the model can handle scenarios where all valid positions on the board are occupied (both by shots and ships). 
+- Domain area: We tested ship rules, which involve ship count and placement as well as various sizes. There should be exactly 5 ships on the board (not more or less). Each ship should not take up more than 5 cells. We also test the initialization and progression of the game (for example, there shouldn't be any pre-fired shots). Turn mechanics between players are also tested. There is also a test suite for move that checks for a valid state after a player makes an action, which checks conditions like a consistent turn and whether their shot is valid. We thoroughly tested this predicate: there should be no repeated shots, players shouldn't move when it's not their turn, and we validated edge cases such as placing ships on the edges of the board. 
+
+## List of Collaborators
+Morgan Lo, Angela Yeung, John Finberg

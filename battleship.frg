@@ -1,8 +1,8 @@
 #lang forge
 option solver MiniSatProver
-// option core_minimization rce
-// option logtranslation 1
-// option coregranularity 1
+option core_minimization rce
+option logtranslation 1
+option coregranularity 1
 option run_sterling "vis.js"
 
 abstract sig Boolean {}
@@ -279,4 +279,4 @@ pred trace {
 //   }
 // }
 
-run {trace} for 30 Coordinate, 10 Ship, 1 BoardState for {next is linear}
+run {trace} for 30 Coordinate, 10 Ship, 5 BoardState for {next is linear}

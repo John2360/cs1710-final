@@ -1,4 +1,5 @@
 # CS1710 Final Project
+https://www.loom.com/share/bdba7697643347188132a59089ba5b00?sid=f70adcbc-1e31-4dd3-93ea-cc568dc9b567
 
 ## Project Objective
 Battleship is a classic naval strategy game where two players attempt to sink each other's fleet of ships by guessing their locations on a hidden grid. Each player places a number of ships—differing in size and orientation—onto a secret board. The game proceeds in turns with players calling out grid coordinates, aiming to hit and ultimately sink their opponent’s ships. The first player to destroy all of their opponent’s vessels wins. 

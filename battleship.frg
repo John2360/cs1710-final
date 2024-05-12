@@ -12,6 +12,11 @@ abstract sig Orientation {}
 one sig Horizontal, Vertical extends Orientation {}
 
 fun MAX: one Int { 7 }
+fun DIFF_BOARDS: one Boolean { False }
+
+fun cells: set Int {
+    0 + 1 + 2 + 3 + 4 + 5 + 6 + 7
+}
 
 sig Coordinate {
   row: one Int,
@@ -58,87 +63,63 @@ fun countShipLocations[ship: Ship] : Int {
   #{loc: Coordinate | loc in ship.locations}
 }
 
-pred ship_wellformed[board: Board] {
-  all s: board.ships | {
-    s.orientation = Horizontal or s.orientation = Vertical
+// pred ship_wellformed[board: Board] {
+//   all s: board.ships | {
+//     s.orientation = Horizontal or s.orientation = Vertical
     
-    s.orientation = Horizontal => {
-      all loc1: s.locations | {
-        all loc2: s.locations - loc1 | {
-          loc1.row = loc2.row and 
-          (loc1.col + 1 = loc2.col or loc1.col - 1 = loc2.col)
+//     s.orientation = Horizontal => {
+//       all loc1: s.locations | {
+//         all loc2: s.locations - loc1 | {
+//           loc1.row = loc2.row and 
+//           (loc1.col + 1 = loc2.col or loc1.col - 1 = loc2.col)
+//         }
+//       }
+//     }
+
+//     s.orientation = Vertical => {
+//       all loc1: s.locations | {
+//         all loc2: s.locations - loc1 | {
+//           loc1.col = loc2.col and 
+//           (loc1.row + 1 = loc2.row or loc1.row - 1 = loc2.row)
+//         }
+//       }
+//     }
+//   }
+// }
+
+pred ship_wellformed[board: Board] {
+  // All ship locations must be horizontal or vertical
+
+  all s: board.ships | {
+    // Ships are in a line
+    s.orientation = Vertical or s.orientation = Horizontal
+    
+    // TODO: Fix this stuff
+    s.orientation = Vertical => {
+      let rows = s.locations.row | {
+        #{rows} = 1
+        all c1: s.locations | some c2: s.locations - c1 | {
+          c1.col = add[c2.col, 1] or c1.col = add[c2.col, -1]
         }
       }
     }
 
-    s.orientation = Vertical => {
-      all loc1: s.locations | {
-        all loc2: s.locations - loc1 | {
-          loc1.col = loc2.col and 
-          (loc1.row + 1 = loc2.row or loc1.row - 1 = loc2.row)
+    s.orientation = Horizontal => {
+      let cols = s.locations.col | {
+        #{cols} = 1
+        all c1: s.locations | some c2: s.locations - c1 | {
+          c1.row = add[c2.row, 1] or c1.row = add[c2.row, -1]
         }
       }
     }
   }
 }
 
-// pred ship_wellformed[board: Board] {
-//   // All ship locations must be horizontal or vertical
-
-//   all s: board.ships | {
-//     // Ships are in a line
-//     s.orientation = Vertical or s.orientation = Horizontal
-    
-//     // TODO: Fix this stuff
-
-//     // horizontal rows
-//     s.orientation = Horizontal => {
-//       all c1: s.locations | some c2: s.locations - c1 | {
-//         c1.row = c2.row and (abs[subtract[c1.col, c2.col]] = 1)
-//       }
-//     }
-
-//     // vertical rows
-//     s.orientation = Vertical => {
-//       all c1: s.locations | some c2: s.locations - c1 | {
-//         c1.col = c2.col and (abs[subtract[c1.row, c2.row]] = 1)
-//       }
-//     }
-//     // s.orientation = Horizontal => {
-//     //   let col = s.locations.col | {
-//     //     #{col} = 1
-//     //   }
-
-//       // all row1: s.locations.row | {
-//       //   some row2: s.locations.row | {
-//       //     row1 != row2
-//       //     row1 = add[row2, 1] or row1 = add[row2, -1]
-//       //   }
-//       // }
-//     // }
-
-//     // s.orientation = Vertical => {
-//     //   let col = s.locations.col | {
-//     //     #{col} = 1
-//     //     }
-
-//     //   // all col1: s.locations.col | {
-//     //   //   some col2: s.locations.col | {
-//     //   //     col1 != col2
-//     //   //     col1 = add[col2, 1] or col1 = add[col2, -1]
-//     //   //   }
-//     //   // }
-//     // }
-    
-    
-//   }
-// }
-
 // Init state of the game - Rio
 pred init[board: BoardState] {
 
   // Board needs to all be false
-  all row, col: Int | row >= 0 and row <= MAX and col >= 0 and col <= MAX => {
+  all row, col: cells | row >= 0 and row <= MAX and col >= 0 and col <= MAX => {
     board.player1.shots[row][col] = False
     board.player2.shots[row][col] = False
   }
@@ -150,7 +131,7 @@ pred init[board: BoardState] {
 pred board_wellformed {
   // Board has to be 8x8
   // Player ships have to be 0-9
-  all b: Board, r, c: Int | {
+  all b: Board, r, c: cells | {
     some b.shots[r][c] => r >= 0 and r <= MAX and c >= 0 and c <= MAX
     
     all c: Coordinate | {
@@ -178,14 +159,16 @@ pred board_wellformed {
   }
 
   // Not all player 1 and player 2 ships are in the same space
-  all b: BoardState | {
-    all s1: b.player1.ships, s2: b.player2.ships | {
-      let locs1 = s1.locations, locs2 = s2.locations | {
-        #{locs1 - locs2} >= 1
+  DIFF_BOARDS = True => {
+    all b: BoardState | {
+      all s1: b.player1.ships, s2: b.player2.ships | {
+        let locs1 = s1.locations, locs2 = s2.locations | {
+          #{locs1 - locs2} >= 1
+        }
       }
     }
   }
-
+  
 }
 
 //Checks if it is player1's turn
@@ -213,12 +196,12 @@ pred move[pre, post: BoardState, row, col: Int] {
     post.player1.shots[row][col] = True
 
     //All positions that aren't the changed one stay the same
-    all row1, col1: Int | {
+    all row1, col1: cells | {
       (row1 != row or col1 != col) =>
       pre.player1.shots[row1][col1] = post.player1.shots[row1][col1]
     }
 
-    all row1, col1: Int | {
+    all row1, col1: cells | {
       pre.player2.shots[row1][col1] = post.player2.shots[row1][col1]
     }
   }
@@ -230,12 +213,12 @@ pred move[pre, post: BoardState, row, col: Int] {
     post.player2.shots[row][col] = True
 
     //All positions that aren't the changed one stay the same
-    all row1, col1: Int | {
+    all row1, col1: cells | {
       (row1 != row or col1 != col) =>
       pre.player2.shots[row1][col1] = post.player2.shots[row1][col1]
     }
 
-    all row1, col1: Int | {
+    all row1, col1: cells | {
       pre.player1.shots[row1][col1] = post.player1.shots[row1][col1]
     }
   }
@@ -248,6 +231,80 @@ pred move[pre, post: BoardState, row, col: Int] {
   all s: pre.player2.ships | {
     s.locations & post.player2.ships.locations = s.locations
   }
+}
+
+inst optimizer {
+    Orientation = `Horizontal0 + `Vertical0
+    Horizontal = `Horizontal0
+    Vertical = `Vertical0
+    Coordinate = `Coordinate0 + `Coordinate1 + `Coordinate2 + `Coordinate3 + `Coordinate4 + `Coordinate5 + `Coordinate6 + `Coordinate7 +`Coordinate8  + `Coordinate9  + `Coordinate10 + `Coordinate11  + `Coordinate12  + `Coordinate13 + `Coordinate14
+    
+    // Ship 1
+    `Coordinate0.row = 0
+    `Coordinate0.col = 0
+
+    // Ship 2
+    `Coordinate1.row = 1
+    `Coordinate1.col = 0
+
+    `Coordinate2.row = 1
+    `Coordinate2.col = 1
+
+    // Ship 3
+    `Coordinate3.row = 2
+    `Coordinate3.col = 0
+
+    `Coordinate4.row = 2
+    `Coordinate4.col = 1
+
+    `Coordinate5.row = 2
+    `Coordinate5.col = 2
+
+    // Ship 4
+    `Coordinate6.row = 3
+    `Coordinate6.col = 0
+
+    `Coordinate7.row = 3
+    `Coordinate7.col = 1
+
+    `Coordinate8.row = 3
+    `Coordinate8.col = 2
+
+    `Coordinate9.row = 3
+    `Coordinate9.col = 3
+
+    // Ship 5
+    `Coordinate10.row = 4
+    `Coordinate10.col = 0
+
+    `Coordinate11.row = 4
+    `Coordinate11.col = 1
+
+    `Coordinate12.row = 4
+    `Coordinate12.col = 2
+
+    `Coordinate13.row = 4
+    `Coordinate13.col = 3
+
+    `Coordinate14.row = 4
+    `Coordinate14.col = 4
+
+    Ship = `Ship0 + `Ship1 + `Ship2 + `Ship3 + `Ship4 + `Ship5
+    
+    `Ship0.locations = ( `Coordinate0 )
+    `Ship0.orientation = `Vertical0
+
+    `Ship1.locations = ( `Coordinate1 + `Coordinate2 )
+    `Ship1.orientation = `Vertical0
+
+    `Ship2.locations = ( `Coordinate3 + `Coordinate4 + `Coordinate5 )
+    `Ship2.orientation = `Vertical0
+
+    `Ship3.locations = ( `Coordinate6 + `Coordinate7 + `Coordinate8 + `Coordinate9 )
+    `Ship3.orientation = `Vertical0
+
+    `Ship4.locations = ( `Coordinate10 + `Coordinate11 + `Coordinate12 + `Coordinate13 + `Coordinate14 )
+    `Ship4.orientation = `Vertical0
 }
 
 pred trace {
@@ -263,7 +320,7 @@ pred trace {
   // Move
   all b: BoardState | { 
     some Game.next[b] => {
-      some row, col: Int | {
+      some row, col: cells | {
         move[b, Game.next[b], row, col]
       } 
     }
@@ -279,4 +336,5 @@ pred trace {
 //   }
 // }
 
-run {trace} for 30 Coordinate, 10 Ship, 5 BoardState for {next is linear}
+// run {trace} for 15 Coordinate, 5 Ship, 1 BoardState for {next is linear}
+run {trace} for 1 BoardState for optimizer

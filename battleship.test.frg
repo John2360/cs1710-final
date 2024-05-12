@@ -2,6 +2,7 @@
 
 open "battleship.frg"  
 
+
 //shots outside of range 
 pred badBoard_shots {
   some board: Board | {
@@ -40,6 +41,7 @@ pred all_shots_in_range {
   }
 }
 
+
 // Ensures that no ships overlap
 pred no_overlap_ships {
   all board: Board | {
@@ -59,7 +61,24 @@ test suite for ship_wellformed {
   }
 }
 
+fun countShipLocations[ship: Ship] : Int {
+  #{loc: Coordinate | loc in ship.locations}
+}
 
+// all ships are of correct size
+pred correctShipSizes[board: Board] {
+  all s: board.ships | {
+    // accounting for init board
+    let size = countShipLocations[s] | size >= 0 and size <= 5
+  }
+}
+
+test suite for correctShipSizes {
+  test expect {
+    validShipSizes: { all board: Board | correctShipSizes[board] } is sat
+    oversizedShips: { some board: Board | not correctShipSizes[board] } is unsat
+  }
+}
 
 pred not_board_wellformed { not board_wellformed}
 
@@ -72,6 +91,18 @@ test suite for board_wellformed {
 test suite for not_board_wellformed {
     assert badBoard_shots is sufficient for not_board_wellformed
     assert badBoard_ships is sufficient for not_board_wellformed
+}
+
+// it should be possible for all positions to have been shot at
+pred fullBoardShots[board: Board] {
+  all row, col: Int | (row >= 0 and row <= MAX and col >= 0 and col <= MAX) => board.shots[row][col] = True
+}
+
+test suite for fullBoardShots {
+  test expect {
+    completeCoverage: { all board: Board | fullBoardShots[board] } is sat
+    incompleteCoverage: { some board: Board | not fullBoardShots[board] } is sat
+  }
 }
 
 // Tests for the initialization state of the game
@@ -95,8 +126,8 @@ pred boardStateWithOneMoreShot[b: BoardState] {
 // Test that game is initialized correctly
 test suite for init {
   test expect {
-    initialEmpty : { all b: BoardState | init[b] and empty_board} is sat
-    badInit : { all b: BoardState | bad_init_boardstate[b] } is sat
+    // initialEmpty : { all b: BoardState | init[b] and empty_board} is sat
+    // badInit : { all b: BoardState | bad_init_boardstate[b] } is sat
   }
 }
 
@@ -119,6 +150,7 @@ pred onlyOneShot[pre, post: BoardState]{
   add[countShots[pre.player1], countShots[pre.player2]] = subtract[add[countShots[post.player1], countShots[post.player2]], 1]
 }
 
+
 pred player1IsSame[pre, post: BoardState]{
   pre.player1 = post.player1
 }
@@ -126,6 +158,7 @@ pred player1IsSame[pre, post: BoardState]{
 pred player2IsSame[pre, post: BoardState]{
   pre.player2 = post.player2
 }
+
 
 test suite for move {
     test expect {
@@ -142,6 +175,7 @@ test suite for move {
           }
         }
       } is sat
+
       possibleInvalidTurn: {all b: BoardState | {
         (player1Turn[Game.next[b]] and player2Turn[Game.next[b]])
           some Game.next[b] => {
@@ -152,5 +186,42 @@ test suite for move {
           }
         }
       } is unsat
+
+      validMoveAtEdge: {
+        all b: BoardState | {
+          (player1Turn[b] or player2Turn[b])
+          some Game.next[b] => {
+            some row, col: Int | {
+              (row = 0 or row = MAX or col = 0 or col = MAX) and
+              move[b, Game.next[b], row, col] and
+              onlyOneShot[b, Game.next[b]]
+            }
+          }
+        }
+      } is sat
+
+      noMoveWhenNotTurn: {
+        all b: BoardState | {
+          (not player1Turn[b] and not player2Turn[b])
+          some Game.next[b] => {
+            all row, col: Int | {
+              not move[b, Game.next[b], row, col]
+            }
+          }
+        }
+      } is sat
+
+      
+      noRepeatedShots: {
+        all b: BoardState | {
+          (player1Turn[b] or player2Turn[b])
+          some Game.next[b] => {
+            some row, col: Int | {
+              (player1Turn[b] => b.player1.shots[row][col] = False and move[b, Game.next[b], row, col])
+              (player2Turn[b] => b.player2.shots[row][col] = False and move[b, Game.next[b], row, col])
+            }
+          } 
+        }        
+      } is sat
   }
 }

@@ -1,8 +1,8 @@
 #lang forge
 option solver MiniSatProver
-option core_minimization rce
-option logtranslation 1
-option coregranularity 1
+// option core_minimization rce
+// option logtranslation 1
+// option coregranularity 1
 option run_sterling "vis.js"
 
 abstract sig Boolean {}

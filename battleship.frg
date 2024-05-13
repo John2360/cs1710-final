@@ -87,32 +87,54 @@ fun countShipLocations[ship: Ship] : Int {
 //   }
 // }
 
-pred ship_wellformed[board: Board] {
-  // All ship locations must be horizontal or vertical
+// pred ship_wellformed[board: Board] {
+//   // All ship locations must be horizontal or vertical
 
-  all s: board.ships | {
-    // Ships are in a line
-    s.orientation = Vertical or s.orientation = Horizontal
+//   all s: board.ships | {
+//     // Ships are in a line
+//     s.orientation = Vertical or s.orientation = Horizontal
     
-    // TODO: Fix this stuff
-    s.orientation = Vertical => {
-      let rows = s.locations.row | {
-        #{rows} = 1
-        all c1: s.locations | some c2: s.locations - c1 | {
-          c1.col = add[c2.col, 1] or c1.col = add[c2.col, -1]
-        }
-      }
-    }
+//     // TODO: Fix this stuff
+//     s.orientation = Vertical => {
+//       let rows = s.locations.row | {
+//         #{rows} = 1
+//         all c1: s.locations | some c2: s.locations - c1 | {
+//           c1.col = add[c2.col, 1] or c1.col = add[c2.col, -1]
+//         }
+//       }
+//     }
 
-    s.orientation = Horizontal => {
-      let cols = s.locations.col | {
-        #{cols} = 1
-        all c1: s.locations | some c2: s.locations - c1 | {
-          c1.row = add[c2.row, 1] or c1.row = add[c2.row, -1]
-        }
+//     s.orientation = Horizontal => {
+//       let cols = s.locations.col | {
+//         #{cols} = 1
+//         all c1: s.locations | some c2: s.locations - c1 | {
+//           c1.row = add[c2.row, 1] or c1.row = add[c2.row, -1]
+//         }
+//       }
+//     }
+//   }
+// }
+
+pred ship_wellformed[board: Board] {
+  all s: board.ships | {
+    s.orientation = Horizontal or s.orientation = Vertical
+    (
+      s.orientation = Horizontal => {
+        all c1, c2: s.locations | c1.row = c2.row implies
+        (c1.col + 1 = c2.col or c1.col - 1 = c2.col)
       }
-    }
+    ) and (
+      s.orientation = Vertical => {
+        all c1, c2: s.locations | c1.col = c2.col implies
+        (c1.row + 1 = c2.row or c1.row - 1 = c2.row)
+      }
+    )
   }
+  #{s: board.ships | countShipLocations[s] = 1} = 1
+  #{s: board.ships | countShipLocations[s] = 2} = 1
+  #{s: board.ships | countShipLocations[s] = 3} = 1
+  #{s: board.ships | countShipLocations[s] = 4} = 1
+  #{s: board.ships | countShipLocations[s] = 5} = 1
 }
 
 // Init state of the game - Rio
@@ -307,6 +329,156 @@ inst optimizer {
     `Ship4.orientation = `Vertical0
 }
 
+inst optimizer2 {
+    Orientation = `Horizontal0 + `Vertical0
+    Horizontal = `Horizontal0
+    Vertical = `Vertical0
+    Coordinate = `Coordinate0 + `Coordinate1 + `Coordinate2 + `Coordinate3 + `Coordinate4 + `Coordinate5 + `Coordinate6 + `Coordinate7 +`Coordinate8  + `Coordinate9  + `Coordinate10 + `Coordinate11  + `Coordinate12  + `Coordinate13 + `Coordinate14
+    
+    // Ship 1
+    `Coordinate0.row = 0
+    `Coordinate0.col = 0
+
+    // Ship 2
+    `Coordinate1.row = 0
+    `Coordinate1.col = 1
+
+    `Coordinate2.row = 1
+    `Coordinate2.col = 1
+
+    // Ship 3
+    `Coordinate3.row = 0
+    `Coordinate3.col = 2
+
+    `Coordinate4.row = 1
+    `Coordinate4.col = 2
+
+    `Coordinate5.row = 2
+    `Coordinate5.col = 2
+
+    // Ship 4
+    `Coordinate6.row = 0
+    `Coordinate6.col = 3
+
+    `Coordinate7.row = 1
+    `Coordinate7.col = 3
+
+    `Coordinate8.row = 2
+    `Coordinate8.col = 3
+
+    `Coordinate9.row = 3
+    `Coordinate9.col = 3
+
+    // Ship 5
+    `Coordinate10.row = 0
+    `Coordinate10.col = 4
+
+    `Coordinate11.row = 1
+    `Coordinate11.col = 4
+
+    `Coordinate12.row = 2
+    `Coordinate12.col = 4
+
+    `Coordinate13.row = 3
+    `Coordinate13.col = 4
+
+    `Coordinate14.row = 4
+    `Coordinate14.col = 4
+
+    Ship = `Ship0 + `Ship1 + `Ship2 + `Ship3 + `Ship4 + `Ship5
+    
+    `Ship0.locations = ( `Coordinate0 )
+    `Ship0.orientation = `Horizontal0
+
+    `Ship1.locations = ( `Coordinate1 + `Coordinate2 )
+    `Ship1.orientation = `Horizontal0
+
+    `Ship2.locations = ( `Coordinate3 + `Coordinate4 + `Coordinate5 )
+    `Ship2.orientation = `Horizontal0
+
+    `Ship3.locations = ( `Coordinate6 + `Coordinate7 + `Coordinate8 + `Coordinate9 )
+    `Ship3.orientation = `Horizontal0
+
+    `Ship4.locations = ( `Coordinate10 + `Coordinate11 + `Coordinate12 + `Coordinate13 + `Coordinate14 )
+    `Ship4.orientation = `Horizontal0
+}
+
+// ships of both horizontal and vertical orientations
+inst optimizer3 {
+    Orientation = `Horizontal0 + `Vertical0
+    Horizontal = `Horizontal0
+    Vertical = `Vertical0
+    Coordinate = `Coordinate0 + `Coordinate1 + `Coordinate2 + `Coordinate3 + `Coordinate4 + `Coordinate5 + `Coordinate6 + `Coordinate7 +`Coordinate8  + `Coordinate9  + `Coordinate10 + `Coordinate11  + `Coordinate12  + `Coordinate13 + `Coordinate14
+    
+    // Ship 1 
+    `Coordinate0.row = 0
+    `Coordinate0.col = 0
+
+    // Ship 2
+    `Coordinate1.row = 0
+    `Coordinate1.col = 1
+
+    `Coordinate2.row = 1
+    `Coordinate2.col = 1
+
+    // Ship 3
+    `Coordinate3.row = 3
+    `Coordinate3.col = 0
+
+    `Coordinate4.row = 3
+    `Coordinate4.col = 1
+
+    `Coordinate5.row = 3
+    `Coordinate5.col = 2
+
+    // Ship 4
+    `Coordinate6.row = 1
+    `Coordinate6.col = 5
+
+    `Coordinate7.row = 2
+    `Coordinate7.col = 5
+
+    `Coordinate8.row = 3
+    `Coordinate8.col = 5
+
+    `Coordinate9.row = 4
+    `Coordinate9.col = 5
+
+    // Ship 5
+    `Coordinate10.row = 5
+    `Coordinate10.col = 0
+
+    `Coordinate11.row = 5
+    `Coordinate11.col = 1
+
+    `Coordinate12.row = 5
+    `Coordinate12.col = 2
+
+    `Coordinate13.row = 5
+    `Coordinate13.col = 3
+
+    `Coordinate14.row = 5
+    `Coordinate14.col = 4
+
+    Ship = `Ship0 + `Ship1 + `Ship2 + `Ship3 + `Ship4 + `Ship5
+    
+    `Ship0.locations = ( `Coordinate0 )
+    `Ship0.orientation = `Horizontal0
+
+    `Ship1.locations = ( `Coordinate1 + `Coordinate2 )
+    `Ship1.orientation = `Horizontal0
+
+    `Ship2.locations = ( `Coordinate3 + `Coordinate4 + `Coordinate5 )
+    `Ship2.orientation = `Vertical0
+
+    `Ship3.locations = ( `Coordinate6 + `Coordinate7 + `Coordinate8 + `Coordinate9 )
+    `Ship3.orientation = `Horizontal0
+
+    `Ship4.locations = ( `Coordinate10 + `Coordinate11 + `Coordinate12 + `Coordinate13 + `Coordinate14 )
+    `Ship4.orientation = `Vertical0
+}
+
+
 pred trace {
   // Init
   init[Game.first]
@@ -337,4 +509,4 @@ pred trace {
 // }
 
 // run {trace} for 15 Coordinate, 5 Ship, 1 BoardState for {next is linear}
-run {trace} for 1 BoardState for optimizer
+run {trace} for 1 BoardState for {optimizer3}

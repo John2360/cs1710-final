@@ -12,7 +12,7 @@ abstract sig Orientation {}
 one sig Horizontal, Vertical extends Orientation {}
 
 fun MAX: one Int { 7 }
-fun DIFF_BOARDS: one Boolean { False }
+fun DIFF_BOARDS: one Boolean { True }
 
 fun cells: set Int {
     0 + 1 + 2 + 3 + 4 + 5 + 6 + 7
@@ -120,11 +120,14 @@ pred ship_wellformed[board: Board] {
     s.orientation = Horizontal or s.orientation = Vertical
     (
       s.orientation = Horizontal => {
-        all c1, c2: s.locations | c1.row = c2.row implies
-        (c1.col + 1 = c2.col or c1.col - 1 = c2.col)
+        // Comment line out below to allow for sat
+        all row1: s.locations | all row2: s.locations | row1 = row2
+        all c1, c2: s.locations | c1.row = c2.row => (c1.col + 1 = c2.col or c1.col - 1 = c2.col)
       }
     ) and (
       s.orientation = Vertical => {
+        // Comment line out below to allow for sat
+        all col2: s.locations | all col2: s.locations | col2 = col2
         all c1, c2: s.locations | c1.col = c2.col implies
         (c1.row + 1 = c2.row or c1.row - 1 = c2.row)
       }
@@ -183,10 +186,14 @@ pred board_wellformed {
   // Not all player 1 and player 2 ships are in the same space
   DIFF_BOARDS = True => {
     all b: BoardState | {
-      all s1: b.player1.ships, s2: b.player2.ships | {
-        let locs1 = s1.locations, locs2 = s2.locations | {
-          #{locs1 - locs2} >= 1
-        }
+      // some s1: b.player1.ships, s2: b.player2.ships | {
+      //   some loc1: s1.locations, loc2: s2.locations | {
+      //     loc1.row != loc2.row or loc1.col != loc2.col
+      //   }
+      // }
+
+      all s1: b.player1.ships | all s2: b.player2.ships | {
+        s1 != s2
       }
     }
   }
@@ -314,7 +321,7 @@ inst optimizer {
     Ship = `Ship0 + `Ship1 + `Ship2 + `Ship3 + `Ship4 + `Ship5
     
     `Ship0.locations = ( `Coordinate0 )
-    `Ship0.orientation = `Vertical0
+    `Ship0.orientation = `Horizontal0
 
     `Ship1.locations = ( `Coordinate1 + `Coordinate2 )
     `Ship1.orientation = `Vertical0
@@ -333,7 +340,7 @@ inst optimizer2 {
     Orientation = `Horizontal0 + `Vertical0
     Horizontal = `Horizontal0
     Vertical = `Vertical0
-    Coordinate = `Coordinate0 + `Coordinate1 + `Coordinate2 + `Coordinate3 + `Coordinate4 + `Coordinate5 + `Coordinate6 + `Coordinate7 +`Coordinate8  + `Coordinate9  + `Coordinate10 + `Coordinate11  + `Coordinate12  + `Coordinate13 + `Coordinate14
+    Coordinate = `Coordinate0 + `Coordinate1 + `Coordinate2 + `Coordinate3 + `Coordinate4 + `Coordinate5 + `Coordinate6 + `Coordinate7 +`Coordinate8  + `Coordinate9  + `Coordinate10 + `Coordinate11  + `Coordinate12  + `Coordinate13 + `Coordinate14 + `Coordinate15 + `Coordinate16 + `Coordinate17 + `Coordinate18 + `Coordinate19 + `Coordinate20 + `Coordinate21 + `Coordinate22 + `Coordinate23 + `Coordinate24 + `Coordinate25 + `Coordinate26 + `Coordinate27 + `Coordinate28 + `Coordinate29
     
     // Ship 1
     `Coordinate0.row = 0
@@ -385,7 +392,7 @@ inst optimizer2 {
     `Coordinate14.row = 4
     `Coordinate14.col = 4
 
-    Ship = `Ship0 + `Ship1 + `Ship2 + `Ship3 + `Ship4 + `Ship5
+    Ship = `Ship0 + `Ship1 + `Ship2 + `Ship3 + `Ship4 + `Ship5 + `Ship6 + `Ship7 + `Ship8 + `Ship9
     
     `Ship0.locations = ( `Coordinate0 )
     `Ship0.orientation = `Horizontal0
@@ -509,4 +516,4 @@ pred trace {
 // }
 
 // run {trace} for 15 Coordinate, 5 Ship, 1 BoardState for {next is linear}
-run {trace} for 1 BoardState for {optimizer3}
+run {trace} for 1 BoardState for {optimizer2}
